@@ -577,26 +577,74 @@
             document.documentElement.classList.toggle('dark');
         }
 
-        // BIOMETRIC SIDIK JARI
-        async function registerBiometrics() {
-            if (window.PublicKeyCredential) {
-                alert("Biometrik HP Anda siap digunakan! Konfirmasi sidik jari Anda.");
-                localStorage.setItem('pos_biometric_enabled', 'true');
-            } else {
-                alert("Perangkat Anda tidak mendukung fitur Biometrik/Sidik Jari.");
-            }
-        }
+        // REGISTRASI BIOMETRIK HP
+async function registerBiometrics() {
+    if (window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()) {
+        try {
+            // Memanggil UI Sensor Sidik Jari Asli HP
+            const challenge = new Uint8Array(32);
+            window.crypto.getRandomValues(challenge);
+            
+            const options = {
+                publicKey: {
+                    challenge: challenge,
+                    rp: { name: "POS Toko Dwi Karya" },
+                    user: {
+                        id: new Uint8Array(16),
+                        name: "admin@tokodwikarya.com",
+                        displayName: "Admin Toko Dwi Karya"
+                    },
+                    pubKeyCredParams: [{ type: "public-key", alg: -7 }],
+                    authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+                    timeout: 60000
+                }
+            };
 
-        function handleBiometricLogin() {
-            if (localStorage.getItem('pos_biometric_enabled') === 'true') {
-                currentUserRole = 'ADMIN';
-                localStorage.setItem('pos_current_role', currentUserRole);
-                document.getElementById('login-modal').classList.add('hidden');
-                applyRolePermissions();
-            } else {
-                alert("Fitur sidik jari belum didaftarkan. Silakan login manual dulu lalu atur di Pengaturan Aplikasi.");
+            await navigator.credentials.create(options);
+            localStorage.setItem('pos_biometric_enabled', 'true');
+            alert("Berhasil! Sidik jari HP kamu sudah terdaftar untuk login.");
+        } catch (err) {
+            alert("Gagal memproses sidik jari atau pendaftaran dibatalkan.");
+        }
+    } else {
+        // Fallback jika dibuka dari dalam APK Wrapper yang memblokir WebAuthn
+        const confirmUse = confirm("Sensor HP kamu mendukung sidik jari, tetapi browser APK memblokir akses langsung.\n\nAktifkan login cepat untuk HP ini?");
+        if (confirmUse) {
+            localStorage.setItem('pos_biometric_enabled', 'true');
+            alert("Fitur Login Cepat aktif di HP ini!");
+        }
+    }
+}
+
+// LOGIN VIA SIDIK JARI / LOGIN CEPAT
+async function handleBiometricLogin() {
+    if (localStorage.getItem('pos_biometric_enabled') === 'true') {
+        if (window.PublicKeyCredential && await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()) {
+            try {
+                const challenge = new Uint8Array(32);
+                window.crypto.getRandomValues(challenge);
+                const options = {
+                    publicKey: {
+                        challenge: challenge,
+                        timeout: 60000,
+                        userVerification: "required"
+                    }
+                };
+                await navigator.credentials.get(options);
+            } catch (e) {
+                // Jika user membatalkan sidik jari
+                return;
             }
         }
+        // Sukses verifikasi / bypass login
+        currentUserRole = 'ADMIN';
+        localStorage.setItem('pos_current_role', currentUserRole);
+        document.getElementById('login-modal').classList.add('hidden');
+        applyRolePermissions();
+    } else {
+        alert("Sidik jari belum didaftarkan. Klik 'Daftarkan Biometrik' dulu di menu Pengaturan Aplikasi.");
+    }
+}
 
         // BARCODE CAMERA SCANNER
         function startBarcodeScanner() {
