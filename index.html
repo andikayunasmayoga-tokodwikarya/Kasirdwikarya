@@ -175,8 +175,8 @@
                 </div>
 
                 <div class="space-y-2 pt-2">
-                    <button onclick="generateInvoice()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow text-xs">
-                        Pratinjau & Cetak Nota
+                    <button onclick="openInvoiceModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow text-xs">
+                        👁️ Pratinjau & Cetak Nota
                     </button>
                     <div class="grid grid-cols-3 gap-2">
                         <button onclick="sendToWhatsApp()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs">WA</button>
@@ -368,128 +368,140 @@
         </div>
     </nav>
 
-    <!-- PREVIEW PRINT AREA -->
-    <div class="max-w-4xl mx-auto my-6 p-4 bg-white shadow-lg border rounded-lg no-print overflow-x-auto">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="font-bold text-xs text-gray-700">Pratinjau Nota Cetak</h3>
-            <button onclick="window.print()" class="bg-blue-600 text-white px-3 py-1.5 rounded text-xs font-bold">Cetak / PDF</button>
-        </div>
-
-        <div id="print-area-container" class="bg-white mx-auto flex justify-center">
-            <div id="preview-faktur" class="invoice-card">
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px; color: #000000;">
-                    <tr>
-                        <td style="vertical-align: top; text-align: left; width: 70px;">
-                            <img src="images/logo.png" alt="Logo" style="width: 60px; height: auto; object-fit: contain;" onerror="this.style.display='none'">
-                        </td>
-                        <td style="vertical-align: top; text-align: left;">
-                            <div id="inv-outlet-name" style="font-weight: 900; font-size: 15px; color: #000000;">TOKO DWI KARYA</div>
-                            <div id="inv-outlet-address" style="font-size: 10.5px; font-weight: 700;">Jl. Dr. Harun II, Gg. Swadaya no 14, Bandar Lampung</div>
-                            <div id="inv-outlet-phone" style="font-size: 10.5px; font-weight: 700;">Telp: 0895402831913</div>
-                        </td>
-                        <td style="vertical-align: top; text-align: right; width: 200px;">
-                            <div style="font-weight: 900; font-size: 15px; color: #000000;">NOTA FAKTUR</div>
-                            <div style="font-size: 10.5px; font-weight: 700;">No. Nota : <span id="inv-number">INV00104</span></div>
-                            <div style="font-size: 10.5px; font-weight: 700;">Tanggal  : <span id="inv-date">20/8/2026</span></div>
-                            <div id="inv-due-container" style="display:none; font-size: 10.5px; font-weight: 700;">Jatuh Tempo: <span id="inv-due-date">20/8/2026</span></div>
-                        </td>
-                    </tr>
-                </table>
-
-                <div style="border-bottom: 2px dashed #000000; margin: 4px 0 6px 0;"></div>
-
-                <div style="margin-bottom: 6px; font-size: 11px; color: #000000;">
-                    <div style="font-weight: 800;">Kepada Yth: <span id="inv-cust-name">SPPG NEWCITY</span></div>
-                    <div style="padding-left: 90px; font-weight: 700;" id="inv-cust-address">Bandar Lampung</div>
+    <!-- MODAL POP-UP PRATINJAU NOTA (Sembunyi secara default) -->
+    <div id="invoice-modal" class="fixed inset-0 bg-slate-900/80 z-50 hidden flex items-center justify-center p-2 md:p-4 no-print overflow-y-auto">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full p-4 space-y-3 my-auto max-h-[90vh] overflow-y-auto border dark:border-slate-700">
+            
+            <!-- Header Modal & Tombol Tutup -->
+            <div class="flex justify-between items-center border-b dark:border-slate-700 pb-2">
+                <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Pratinjau Nota Cetak</h3>
+                <div class="flex gap-2">
+                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow">
+                        🖨️ Cetak / PDF
+                    </button>
+                    <button onclick="closeInvoiceModal()" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-300">
+                        ✕ Tutup
+                    </button>
                 </div>
-
-                <table style="width: 100%; border-collapse: collapse; color: #000000; margin-bottom: 2px;">
-                    <thead>
-                        <tr style="border-top: 2px solid #000000; border-bottom: 2px solid #000000; font-weight: 900;">
-                            <th style="padding: 2px 0; text-align: center; width: 35px;">No.</th>
-                            <th style="padding: 2px 0; text-align: left;">Nama Barang</th>
-                            <th style="padding: 2px 0; text-align: center; width: 100px;">Banyaknya</th>
-                            <th style="padding: 2px 0; text-align: right; width: 120px;">Harga Satuan</th>
-                            <th style="padding: 2px 0; text-align: right; width: 130px;">Jumlah (Rp)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="inv-table-body" style="font-weight: 700;"></tbody>
-                </table>
-
-                <div style="border-bottom: 2px solid #000000; margin-top: 1px; margin-bottom: 4px;"></div>
-
-                <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px; color: #000000;">
-                    <tr>
-                        <td style="width: 45%;"></td>
-                        <td style="width: 55%;">
-                            <table style="width: 100%; border-collapse: collapse; font-size: 11px; font-weight: 700;">
-                                <tr>
-                                    <td style="text-align: right; padding: 1px 0;">Subtotal:</td>
-                                    <td style="text-align: right; width: 130px; padding: 1px 0;">Rp <span id="inv-subtotal">1.250.000</span></td>
-                                </tr>
-                                <tr>
-                                    <td style="text-align: right; padding: 1px 0;">PPN <span id="inv-ppn-rate">0%</span>:</td>
-                                    <td style="text-align: right; padding: 1px 0;">Rp <span id="inv-ppn">0</span></td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2" style="border-bottom: 2px solid #000000; padding: 1px 0;"></td>
-                                </tr>
-                                <tr style="font-weight: 900; font-size: 12px;">
-                                    <td style="text-align: right; padding-top: 2px;">TOTAL NETTO:</td>
-                                    <td style="text-align: right; padding-top: 2px;">Rp <span id="inv-total">1.250.000</span></td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-
-                <table style="width: 100%; border-collapse: collapse; margin-top: 6px; color: #000000;">
-                    <tr>
-                        <td style="vertical-align: bottom; width: 45%;">
-                            <div style="border: 1.5px dashed #000000; padding: 4px 6px; font-size: 10px; line-height: 1.25; font-weight: 700;">
-                                <div style="font-weight: 900; margin-bottom: 1px;">Informasi Pembayaran:</div>
-                                <div>Bank: <span id="inv-bank">Bank Sinarmas</span></div>
-                                <div>A/N : <span id="inv-an">ANDIKA YUNAS MAYOGA</span></div>
-                                <div>No. Rek: <span id="inv-rek">0059831399</span></div>
-                            </div>
-                        </td>
-                        <td style="width: 5%;"></td>
-                        <td style="vertical-align: bottom; width: 50%;">
-                            <table style="width: 100%; text-align: center; font-size: 11px; font-weight: 800; border-collapse: collapse;">
-                                <tr>
-                                    <td style="width: 50%; padding-bottom: 25px;">Tanda Terima,</td>
-                                    <td style="width: 50%; padding-bottom: 25px;">Hormat Kami,</td>
-                                </tr>
-                                <tr>
-                                    <td>( ................... )</td>
-                                    <td>( ................... )</td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
             </div>
 
-            <div id="preview-thermal" class="hidden" style="width: 280px; margin: 0 auto; padding: 10px; background: #fff; border: 2px solid #000; font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #000; font-weight: 700; box-sizing: border-box;">
-                <div style="text-align: center; font-weight: 900; font-size: 13px;" id="thm-outlet-name">TOKO DWI KARYA</div>
-                <div style="text-align: center; font-size: 10px;" id="thm-outlet-address">Jl. Dr. Harun II, Bandar Lampung</div>
-                <div style="text-align: center; font-size: 10px;" id="thm-outlet-phone">0895402831913</div>
-                <div style="border-bottom: 1.5px dashed #000; margin: 5px 0;"></div>
-                <div style="font-size: 10px;">
-                    <div>No: <span id="thm-number">INV00104</span></div>
-                    <div>Tgl: <span id="thm-date">20/8/2026</span></div>
-                    <div>Kepada: <span id="thm-cust">SPPG NEWCITY</span></div>
+            <!-- Area Nota Cetak -->
+            <div id="print-area-container" class="bg-white mx-auto flex justify-center p-2 rounded-lg">
+                <div id="preview-faktur" class="invoice-card">
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 2px; color: #000000;">
+                        <tr>
+                            <td style="vertical-align: top; text-align: left; width: 70px;">
+                                <img src="images/logo.png" alt="Logo" style="width: 60px; height: auto; object-fit: contain;" onerror="this.style.display='none'">
+                            </td>
+                            <td style="vertical-align: top; text-align: left;">
+                                <div id="inv-outlet-name" style="font-weight: 900; font-size: 15px; color: #000000;">TOKO DWI KARYA</div>
+                                <div id="inv-outlet-address" style="font-size: 10.5px; font-weight: 700;">Jl. Dr. Harun II, Gg. Swadaya no 14, Bandar Lampung</div>
+                                <div id="inv-outlet-phone" style="font-size: 10.5px; font-weight: 700;">Telp: 0895402831913</div>
+                            </td>
+                            <td style="vertical-align: top; text-align: right; width: 200px;">
+                                <div style="font-weight: 900; font-size: 15px; color: #000000;">NOTA FAKTUR</div>
+                                <div style="font-size: 10.5px; font-weight: 700;">No. Nota : <span id="inv-number">INV00104</span></div>
+                                <div style="font-size: 10.5px; font-weight: 700;">Tanggal  : <span id="inv-date">20/8/2026</span></div>
+                                <div id="inv-due-container" style="display:none; font-size: 10.5px; font-weight: 700;">Jatuh Tempo: <span id="inv-due-date">20/8/2026</span></div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div style="border-bottom: 2px dashed #000000; margin: 4px 0 6px 0;"></div>
+
+                    <div style="margin-bottom: 6px; font-size: 11px; color: #000000;">
+                        <div style="font-weight: 800;">Kepada Yth: <span id="inv-cust-name">SPPG NEWCITY</span></div>
+                        <div style="padding-left: 90px; font-weight: 700;" id="inv-cust-address">Bandar Lampung</div>
+                    </div>
+
+                    <table style="width: 100%; border-collapse: collapse; color: #000000; margin-bottom: 2px;">
+                        <thead>
+                            <tr style="border-top: 2px solid #000000; border-bottom: 2px solid #000000; font-weight: 900;">
+                                <th style="padding: 2px 0; text-align: center; width: 35px;">No.</th>
+                                <th style="padding: 2px 0; text-align: left;">Nama Barang</th>
+                                <th style="padding: 2px 0; text-align: center; width: 100px;">Banyaknya</th>
+                                <th style="padding: 2px 0; text-align: right; width: 120px;">Harga Satuan</th>
+                                <th style="padding: 2px 0; text-align: right; width: 130px;">Jumlah (Rp)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inv-table-body" style="font-weight: 700;"></tbody>
+                    </table>
+
+                    <div style="border-bottom: 2px solid #000000; margin-top: 1px; margin-bottom: 4px;"></div>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 6px; color: #000000;">
+                        <tr>
+                            <td style="width: 45%;"></td>
+                            <td style="width: 55%;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 11px; font-weight: 700;">
+                                    <tr>
+                                        <td style="text-align: right; padding: 1px 0;">Subtotal:</td>
+                                        <td style="text-align: right; width: 130px; padding: 1px 0;">Rp <span id="inv-subtotal">1.250.000</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="text-align: right; padding: 1px 0;">PPN <span id="inv-ppn-rate">0%</span>:</td>
+                                        <td style="text-align: right; padding: 1px 0;">Rp <span id="inv-ppn">0</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2" style="border-bottom: 2px solid #000000; padding: 1px 0;"></td>
+                                    </tr>
+                                    <tr style="font-weight: 900; font-size: 12px;">
+                                        <td style="text-align: right; padding-top: 2px;">TOTAL NETTO:</td>
+                                        <td style="text-align: right; padding-top: 2px;">Rp <span id="inv-total">1.250.000</span></td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 6px; color: #000000;">
+                        <tr>
+                            <td style="vertical-align: bottom; width: 45%;">
+                                <div style="border: 1.5px dashed #000000; padding: 4px 6px; font-size: 10px; line-height: 1.25; font-weight: 700;">
+                                    <div style="font-weight: 900; margin-bottom: 1px;">Informasi Pembayaran:</div>
+                                    <div>Bank: <span id="inv-bank">Bank Sinarmas</span></div>
+                                    <div>A/N : <span id="inv-an">ANDIKA YUNAS MAYOGA</span></div>
+                                    <div>No. Rek: <span id="inv-rek">0059831399</span></div>
+                                </div>
+                            </td>
+                            <td style="width: 5%;"></td>
+                            <td style="vertical-align: bottom; width: 50%;">
+                                <table style="width: 100%; text-align: center; font-size: 11px; font-weight: 800; border-collapse: collapse;">
+                                    <tr>
+                                        <td style="width: 50%; padding-bottom: 25px;">Tanda Terima,</td>
+                                        <td style="width: 50%; padding-bottom: 25px;">Hormat Kami,</td>
+                                    </tr>
+                                    <tr>
+                                        <td>( ................... )</td>
+                                        <td>( ................... )</td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-                <div style="border-bottom: 1.5px dashed #000; margin: 5px 0;"></div>
-                <div id="thm-items-list"></div>
-                <div style="border-bottom: 1.5px dashed #000; margin: 5px 0;"></div>
-                <div style="display: flex; justify-content: space-between;"><span>Subtotal:</span><span id="thm-subtotal">1.250.000</span></div>
-                <div style="display: flex; justify-content: space-between;"><span>PPN:</span><span id="thm-ppn">0</span></div>
-                <div style="display: flex; justify-content: space-between; font-weight: 900; border-top: 1.5px solid #000; padding-top: 2px; margin-top: 2px;">
-                    <span>TOTAL:</span><span id="thm-total">1.250.000</span>
+
+                <div id="preview-thermal" class="hidden" style="width: 280px; margin: 0 auto; padding: 10px; background: #fff; border: 2px solid #000; font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #000; font-weight: 700; box-sizing: border-box;">
+                    <div style="text-align: center; font-weight: 900; font-size: 13px;" id="thm-outlet-name">TOKO DWI KARYA</div>
+                    <div style="text-align: center; font-size: 10px;" id="thm-outlet-address">Jl. Dr. Harun II, Bandar Lampung</div>
+                    <div style="text-align: center; font-size: 10px;" id="thm-outlet-phone">0895402831913</div>
+                    <div style="border-bottom: 1.5px dashed #000; margin: 5px 0;"></div>
+                    <div style="font-size: 10px;">
+                        <div>No: <span id="thm-number">INV00104</span></div>
+                        <div>Tgl: <span id="thm-date">20/8/2026</span></div>
+                        <div>Kepada: <span id="thm-cust">SPPG NEWCITY</span></div>
+                    </div>
+                    <div style="border-bottom: 1.5px dashed #000; margin: 5px 0;"></div>
+                    <div id="thm-items-list"></div>
+                    <div style="border-bottom: 1.5px dashed #000; margin: 5px 0;"></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Subtotal:</span><span id="thm-subtotal">1.250.000</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>PPN:</span><span id="thm-ppn">0</span></div>
+                    <div style="display: flex; justify-content: space-between; font-weight: 900; border-top: 1.5px solid #000; padding-top: 2px; margin-top: 2px;">
+                        <span>TOTAL:</span><span id="thm-total">1.250.000</span>
+                    </div>
+                    <div style="border-bottom: 1.5px dashed #000; margin: 5px 0;"></div>
+                    <div style="text-align: center; font-size: 10px;">Terima Kasih Atas Kunjungan Anda!</div>
                 </div>
-                <div style="border-bottom: 1.5px dashed #000; margin: 5px 0;"></div>
-                <div style="text-align: center; font-size: 10px;">Terima Kasih Atas Kunjungan Anda!</div>
             </div>
         </div>
     </div>
@@ -531,6 +543,15 @@
             renderCustomersTable();
             renderReports();
             updateInvoicePreview();
+        }
+
+        function openInvoiceModal() {
+            updateInvoicePreview();
+            document.getElementById('invoice-modal').classList.remove('hidden');
+        }
+
+        function closeInvoiceModal() {
+            document.getElementById('invoice-modal').classList.add('hidden');
         }
 
         function handleLogin() {
@@ -873,7 +894,7 @@
             localStorage.setItem('pos_transactions', JSON.stringify(transactions));
             renderHistory();
             renderReports();
-            window.print();
+            openInvoiceModal();
         }
 
         function downloadInvoiceJPG() {
@@ -1000,7 +1021,7 @@
                         ${profitCell}
                         <td class="p-2"><button onclick="toggleStatus('${t.id}')" class="text-[10px] px-2 py-0.5 rounded font-bold ${isPiutang ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'}">${t.status}</button></td>
                         <td class="p-2 text-center space-x-1">
-                            <button onclick="window.print()" class="text-blue-600 hover:underline">Cetak</button>
+                            <button onclick="openInvoiceModal()" class="text-blue-600 hover:underline">Cetak</button>
                             <button onclick="deleteTransaction('${t.id}')" class="admin-only text-red-600 hover:underline font-bold ml-1">Hapus</button>
                         </td>
                     </tr>
