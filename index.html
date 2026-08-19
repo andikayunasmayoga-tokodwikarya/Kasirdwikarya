@@ -1174,14 +1174,46 @@
         }
 
         function renderHistory() {
-            const tbody = document.getElementById('history-table-body');
-            tbody.innerHTML = '';
-            const filtered = transactions.filter(t => t.outletId === activeOutletId);
+    const tbody = document.getElementById('history-table-body');
+    tbody.innerHTML = '';
+    const filtered = transactions.filter(t => t.outletId === activeOutletId);
 
-            if(filtered.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">Belum ada riwayat transaksi.</td></tr>`;
-                return;
-            }
+    if(filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="p-4 text-center text-gray-500">Belum ada riwayat transaksi.</td></tr>`;
+        return;
+    }
+
+    filtered.forEach(t => {
+        const statusBadge = t.status === 'LUNAS' 
+            ? `<button onclick="toggleTransactionStatus('${t.id}')" class="bg-green-100 text-green-800 text-[10px] px-2 py-0.5 rounded font-bold hover:bg-green-200">LUNAS</button>`
+            : `<button onclick="toggleTransactionStatus('${t.id}')" class="bg-amber-100 text-amber-800 text-[10px] px-2 py-0.5 rounded font-bold hover:bg-amber-200">PIUTANG (Klik Lunas)</button>`;
+
+        tbody.innerHTML += `
+            <tr class="border-b hover:bg-gray-50">
+                <td class="p-2 md:p-3 font-semibold">${t.id}</td>
+                <td class="p-2 md:p-3">${t.date}</td>
+                <td class="p-2 md:p-3">${t.customer}</td>
+                <td class="p-2 md:p-3 font-bold">Rp ${t.total.toLocaleString('id-ID')}</td>
+                <td class="p-2 md:p-3 font-bold text-emerald-600">Rp ${t.profit.toLocaleString('id-ID')}</td>
+                <td class="p-2 md:p-3">${statusBadge}</td>
+                <td class="p-2 md:p-3 text-center space-x-1">
+                    <button onclick="window.print()" class="text-blue-600 hover:underline">Cetak</button>
+                    <button onclick="deleteTransaction('${t.id}')" class="text-red-600 hover:underline font-bold ml-2">Hapus</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+// FUNGSI UNTUK HAPUS TRANSAKSI & REFRES LAPORAN AUTOMATIS
+function deleteTransaction(txId) {
+    if (confirm('Yakin ingin menghapus transaksi ini? Data laporan keuangan akan otomatis diperbarui.')) {
+        transactions = transactions.filter(t => t.id !== txId);
+        localStorage.setItem('pos_transactions', JSON.stringify(transactions));
+        renderHistory();
+        renderReports();
+    }
+}
 
             filtered.forEach(t => {
                 const statusBadge = t.status === 'LUNAS' 
