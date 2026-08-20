@@ -342,14 +342,22 @@
             <div class="flex justify-between items-center border-b dark:border-slate-700 pb-2">
                 <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Pratinjau Nota Pesanan</h3>
                 <div class="flex gap-2">
-                    <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow">
-                        🖨️ Cetak / PDF
-                    </button>
+<button onclick="printOnly()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow">
+    🖨️ Cetak / PDF
+</button>
                     <button onclick="closeInvoiceModal()" class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-300">
                         ✕ Tutup
                     </button>
                 </div>
-            </div>
+            </div> 
+            <!-- Modal Sukses ✅ -->
+<div id="success-modal" class="fixed inset-0 bg-slate-900/60 z-[60] hidden flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-slate-800 p-8 rounded-3xl text-center shadow-2xl max-w-[300px]">
+        <div class="text-6xl mb-4">✅</div>
+        <h2 class="text-xl font-bold text-slate-800 dark:text-white">Pesanan Selesai!</h2>
+        <p class="text-slate-500 text-sm mt-1">Data sudah tersimpan.</p>
+    </div>
+</div>
 
             <div id="print-area-container" class="bg-white mx-auto flex justify-center p-2 rounded-lg">
                 <div id="preview-faktur" class="invoice-card">
@@ -1044,6 +1052,34 @@
             renderOutletDropdown();
             alert('Outlet berhasil disimpan!');
         }
+    // --- FUNGSI TAMBAHAN SUCCESS MODAL ---
+    function triggerSuccess() {
+        document.getElementById('success-modal').classList.remove('hidden');
+        setTimeout(() => {
+            closeAllModals();
+            resetPosForm();
+        }, 2000);
+    }
+
+    function closeAllModals() {
+        document.getElementById('invoice-modal').classList.add('hidden');
+        document.getElementById('success-modal').classList.add('hidden');
+    }
+
+    function resetPosForm() {
+        document.getElementById('items-container').innerHTML = '';
+        addItemRow();
+        document.getElementById('cust-name').value = '';
+        document.getElementById('cust-phone').value = '';
+        document.getElementById('cust-address').value = '';
+        document.getElementById('ppn-rate').value = '0';
+        calculateTotals();
+    }
+
+    function printOnly() {
+        window.print();
+        triggerSuccess();
+    }
 
         init();
     </script>
