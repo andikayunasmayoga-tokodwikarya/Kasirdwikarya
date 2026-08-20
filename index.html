@@ -8,7 +8,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://unpkg.com/@zxing/library@latest"></script>
+    <!-- Library Barcode Scanner Kamera Ringan -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
     <script>
         tailwind.config = { darkMode: 'class' }
     </script>
@@ -57,9 +58,9 @@
                 </div>
 
                 <!-- Video Scanner Camera -->
-                <div id="scanner-container" class="hidden relative bg-black rounded-xl overflow-hidden max-h-48">
-                    <video id="barcode-video" class="w-full h-48 object-cover"></video>
-                    <button onclick="stopBarcodeScanner()" class="absolute top-2 right-2 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-lg">Tutup Kamera</button>
+                <div id="scanner-container" class="hidden relative bg-black rounded-xl overflow-hidden min-h-48">
+                    <div id="reader" class="w-full"></div>
+                    <button onclick="stopBarcodeScanner()" class="absolute top-2 right-2 z-10 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-lg">Tutup Kamera</button>
                 </div>
 
                 <!-- Form Pelanggan -->
@@ -90,7 +91,7 @@
                     </div>
                     <div>
                         <label class="block text-[10px] font-bold text-slate-500 uppercase mb-1">Jatuh Tempo</label>
-                        <input type="date" id="due-date" disabled class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded-lg p-2 bg-gray-100">
+                        <input type="date" id="due-date" disabled class="w-full border dark:border-slate-600 dark:bg-slate-700 rounded-lg p-2 bg-gray-100 dark:bg-slate-800">
                     </div>
                 </div>
 
@@ -124,6 +125,7 @@
 
                 <div class="space-y-2 text-xs">
                     <div class="flex justify-between"><span>Subtotal</span><span id="summary-subtotal">Rp 0</span></div>
+                    <div class="flex justify-between"><span>Total Diskon</span><span id="summary-discount" class="text-red-500">Rp 0</span></div>
                     <div class="flex justify-between"><span>PPN</span><span id="summary-ppn">Rp 0</span></div>
                     <div class="flex justify-between text-base font-extrabold border-t dark:border-slate-700 pt-2">
                         <span>Total Netto</span><span id="summary-total" class="text-blue-600">Rp 0</span>
@@ -142,8 +144,8 @@
                 </div>
 
                 <div class="space-y-2 pt-2">
-                    <button onclick="openInvoiceModal()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow text-xs">
-                        👁️ Pratinjau & Cetak Nota
+                    <button onclick="generateInvoice()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl shadow text-xs">
+                        🚀 Proses & Cetak Pesanan
                     </button>
                     <div class="grid grid-cols-3 gap-2">
                         <button onclick="sendToWhatsApp()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-xl text-xs">WA</button>
@@ -230,6 +232,7 @@
                     <input type="month" id="report-month-filter" onchange="renderReports()" class="border rounded p-1.5 text-xs dark:bg-slate-700">
                     <input type="number" id="report-year-filter" min="2020" max="2099" value="2026" onchange="renderReports()" class="border rounded p-1.5 text-xs w-20 hidden dark:bg-slate-700">
                     <button onclick="exportToExcel()" class="bg-emerald-600 text-white font-bold text-xs px-3 py-1.5 rounded-lg">📊 Excel</button>
+                    <button onclick="sendWAReport()" class="bg-green-500 text-white font-bold text-xs px-3 py-1.5 rounded-lg">💬 WA Laporan</button>
                 </div>
             </div>
             
@@ -332,12 +335,12 @@
         </div>
     </nav>
 
-    <!-- MODAL POP-UP PRATINJAU NOTA (Sembunyi secara default) -->
+    <!-- MODAL POP-UP NOTA HASIL PROSES PESANAN -->
     <div id="invoice-modal" class="fixed inset-0 bg-slate-900/80 z-50 hidden flex items-center justify-center p-2 md:p-4 no-print overflow-y-auto">
         <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-4xl w-full p-4 space-y-3 my-auto max-h-[90vh] overflow-y-auto border dark:border-slate-700">
             
             <div class="flex justify-between items-center border-b dark:border-slate-700 pb-2">
-                <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Pratinjau Nota Cetak</h3>
+                <h3 class="font-bold text-sm text-slate-800 dark:text-slate-100">Pratinjau Nota Pesanan</h3>
                 <div class="flex gap-2">
                     <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow">
                         🖨️ Cetak / PDF
@@ -401,6 +404,10 @@
                                         <td style="text-align: right; width: 130px; padding: 1px 0;">Rp <span id="inv-subtotal">1.250.000</span></td>
                                     </tr>
                                     <tr>
+                                        <td style="text-align: right; padding: 1px 0;">Diskon:</td>
+                                        <td style="text-align: right; padding: 1px 0;">Rp <span id="inv-discount">0</span></td>
+                                    </tr>
+                                    <tr>
                                         <td style="text-align: right; padding: 1px 0;">PPN <span id="inv-ppn-rate">0%</span>:</td>
                                         <td style="text-align: right; padding: 1px 0;">Rp <span id="inv-ppn">0</span></td>
                                     </tr>
@@ -457,6 +464,7 @@
                     <div id="thm-items-list"></div>
                     <div style="border-bottom: 1.5px dashed #000; margin: 5px 0;"></div>
                     <div style="display: flex; justify-content: space-between;"><span>Subtotal:</span><span id="thm-subtotal">1.250.000</span></div>
+                    <div style="display: flex; justify-content: space-between;"><span>Diskon:</span><span id="thm-discount">0</span></div>
                     <div style="display: flex; justify-content: space-between;"><span>PPN:</span><span id="thm-ppn">0</span></div>
                     <div style="display: flex; justify-content: space-between; font-weight: 900; border-top: 1.5px solid #000; padding-top: 2px; margin-top: 2px;">
                         <span>TOTAL:</span><span id="thm-total">1.250.000</span>
@@ -477,7 +485,7 @@
         let inventory = JSON.parse(localStorage.getItem('pos_inventory')) || [];
         let transactions = JSON.parse(localStorage.getItem('pos_transactions')) || [];
         let customers = JSON.parse(localStorage.getItem('pos_customers')) || {};
-        let codeReader = null;
+        let html5QrCode = null;
 
         function init() {
             if (isDarkMode) document.documentElement.classList.add('dark');
@@ -519,31 +527,37 @@
             const dueDateInput = document.getElementById('due-date');
             if (dueType === 'custom') {
                 dueDateInput.disabled = false;
-                dueDateInput.classList.remove('bg-gray-100');
             } else {
                 dueDateInput.disabled = true;
-                dueDateInput.classList.add('bg-gray-100');
             }
         }
 
         function startBarcodeScanner() {
             const container = document.getElementById('scanner-container');
             container.classList.remove('hidden');
-            codeReader = new ZXing.BrowserMultiFormatReader();
-            codeReader.decodeFromVideoDevice(null, 'barcode-video', (result) => {
-                if (result) {
-                    const prod = inventory.find(p => p.barcode === result.text);
-                    if (prod) {
-                        autoAddScannedItem(prod);
-                        stopBarcodeScanner();
-                    }
+            html5QrCode = new Html5Qrcode("reader");
+            html5QrCode.start({ facingMode: "environment" }, { fps: 10, qrbox: { width: 250, height: 150 } }, (scannedCode) => {
+                const prod = inventory.find(p => p.barcode === scannedCode);
+                if (prod) {
+                    autoAddScannedItem(prod);
+                    stopBarcodeScanner();
                 }
+            }).catch(err => {
+                alert('Gagal membuka kamera. Pastikan izin kamera aktif!');
+                stopBarcodeScanner();
             });
         }
 
         function stopBarcodeScanner() {
-            if (codeReader) codeReader.reset();
-            document.getElementById('scanner-container').classList.add('hidden');
+            if (html5QrCode) {
+                html5QrCode.stop().then(() => {
+                    document.getElementById('scanner-container').classList.add('hidden');
+                }).catch(() => {
+                    document.getElementById('scanner-container').classList.add('hidden');
+                });
+            } else {
+                document.getElementById('scanner-container').classList.add('hidden');
+            }
         }
 
         function autoAddScannedItem(prod) {
@@ -608,14 +622,17 @@
         function addItemRow() {
             const container = document.getElementById('items-container');
             const div = document.createElement('div');
-            div.className = "flex gap-1.5 items-center item-row bg-slate-50 dark:bg-slate-700/40 p-2 rounded-xl border dark:border-slate-600";
+            div.className = "flex flex-wrap sm:flex-nowrap gap-1.5 items-center item-row bg-slate-50 dark:bg-slate-700/40 p-2 rounded-xl border dark:border-slate-600 text-xs";
             div.innerHTML = `
-                <input type="text" placeholder="Nama Barang" list="inventory-list" onchange="onItemNameChange(this)" class="item-name border dark:border-slate-600 dark:bg-slate-700 rounded-lg p-1.5 text-xs flex-1 outline-none">
-                <input type="number" placeholder="Qty" value="1" min="1" onchange="calculateTotals()" class="item-qty border dark:border-slate-600 dark:bg-slate-700 rounded-lg p-1.5 text-xs w-12 text-center">
-                <input type="text" placeholder="Satuan" value="Box" class="item-unit border dark:border-slate-600 dark:bg-slate-700 rounded-lg p-1.5 text-xs w-14">
-                <input type="number" placeholder="Harga" value="0" min="0" onchange="calculateTotals()" class="item-price border dark:border-slate-600 dark:bg-slate-700 rounded-lg p-1.5 text-xs w-20 text-right">
-                <input type="hidden" class="item-cost" value="0">
-                <button onclick="this.parentElement.remove(); calculateTotals();" class="text-red-500 font-bold px-1 text-sm">✕</button>
+                <input type="text" placeholder="Nama Barang" list="inventory-list" onchange="onItemNameChange(this)" class="item-name border dark:border-slate-600 dark:bg-slate-700 rounded-lg p-1.5 w-full sm:w-auto flex-1 outline-none">
+                <div class="flex gap-1 w-full sm:w-auto justify-between items-center">
+                    <input type="number" placeholder="Qty" value="1" min="1" onchange="calculateTotals()" class="item-qty border dark:border-slate-600 dark:bg-slate-700 rounded-lg p-1.5 w-12 text-center">
+                    <input type="text" placeholder="Satuan" value="Box" class="item-unit border dark:border-slate-600 dark:bg-slate-700 rounded-lg p-1.5 w-12 text-center">
+                    <input type="number" placeholder="Harga" value="0" min="0" onchange="calculateTotals()" class="item-price border dark:border-slate-600 dark:bg-slate-700 rounded-lg p-1.5 w-20 text-right">
+                    <input type="number" placeholder="Disc" value="0" min="0" onchange="calculateTotals()" class="item-discount border dark:border-slate-600 dark:bg-slate-700 rounded-lg p-1.5 w-16 text-right text-red-500">
+                    <input type="hidden" class="item-cost" value="0">
+                    <button onclick="this.parentElement.parentElement.remove(); calculateTotals();" class="text-red-500 font-bold px-1 text-sm">✕</button>
+                </div>
             `;
             container.appendChild(div);
         }
@@ -623,7 +640,7 @@
         function onItemNameChange(input) {
             const custName = document.getElementById('cust-name').value.trim();
             const itemName = input.value.trim();
-            const row = input.parentElement;
+            const row = input.closest('.item-row');
             const priceInput = row.querySelector('.item-price');
             const unitInput = row.querySelector('.item-unit');
             const costInput = row.querySelector('.item-cost');
@@ -642,22 +659,27 @@
         }
 
         function calculateTotals() {
-            let subtotal = 0, totalCost = 0;
+            let subtotal = 0, totalCost = 0, totalDiscount = 0;
             document.querySelectorAll('.item-row').forEach(r => {
                 const qty = parseFloat(r.querySelector('.item-qty').value) || 0;
                 const price = parseFloat(r.querySelector('.item-price').value) || 0;
+                const discount = parseFloat(r.querySelector('.item-discount').value) || 0;
                 const cost = parseFloat(r.querySelector('.item-cost').value) || 0;
+                
                 subtotal += qty * price;
+                totalDiscount += discount;
                 totalCost += qty * cost;
             });
 
+            const netSubtotal = Math.max(0, subtotal - totalDiscount);
             const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
-            const ppn = subtotal * (ppnRate / 100);
-            const total = subtotal + ppn;
+            const ppn = netSubtotal * (ppnRate / 100);
+            const total = netSubtotal + ppn;
             const profit = total - totalCost;
             const marginPercent = total > 0 ? ((profit / total) * 100).toFixed(1) : 0;
 
             document.getElementById('summary-subtotal').innerText = 'Rp ' + subtotal.toLocaleString('id-ID');
+            document.getElementById('summary-discount').innerText = 'Rp ' + totalDiscount.toLocaleString('id-ID');
             document.getElementById('summary-ppn').innerText = 'Rp ' + ppn.toLocaleString('id-ID');
             document.getElementById('summary-total').innerText = 'Rp ' + total.toLocaleString('id-ID');
             document.getElementById('summary-cost').innerText = 'Rp ' + totalCost.toLocaleString('id-ID');
@@ -668,9 +690,11 @@
         function updateInvoicePreview() {
             const mode = document.getElementById('print-mode-select').value;
             const outlet = outlets.find(o => o.id === activeOutletId) || outlets[0];
-            const custName = document.getElementById('cust-name').value || "SPPG NEWCITY";
+            const custName = document.getElementById('cust-name').value || "Pelanggan Umum";
             const custAddress = document.getElementById('cust-address').value || "Bandar Lampung";
             const today = new Date().toLocaleDateString('id-ID');
+
+            let subtotal = 0, totalDiscount = 0;
 
             if (mode === 'thermal') {
                 document.getElementById('preview-faktur').classList.add('hidden');
@@ -683,21 +707,24 @@
 
                 const thmContainer = document.getElementById('thm-items-list');
                 thmContainer.innerHTML = '';
-                let subtotal = 0;
                 document.querySelectorAll('.item-row').forEach(r => {
                     const name = r.querySelector('.item-name').value || "Barang";
                     const qty = parseFloat(r.querySelector('.item-qty').value) || 0;
                     const price = parseFloat(r.querySelector('.item-price').value) || 0;
-                    const lineTotal = qty * price;
-                    subtotal += lineTotal;
+                    const disc = parseFloat(r.querySelector('.item-discount').value) || 0;
+                    const lineTotal = (qty * price) - disc;
+                    subtotal += (qty * price);
+                    totalDiscount += disc;
                     thmContainer.innerHTML += `<div style="display:flex; justify-content:space-between;"><span>${name} x${qty}</span><span>${lineTotal.toLocaleString('id-ID')}</span></div>`;
                 });
 
                 const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
-                const ppn = subtotal * (ppnRate / 100);
+                const netSubtotal = Math.max(0, subtotal - totalDiscount);
+                const ppn = netSubtotal * (ppnRate / 100);
                 document.getElementById('thm-subtotal').innerText = subtotal.toLocaleString('id-ID');
+                document.getElementById('thm-discount').innerText = totalDiscount.toLocaleString('id-ID');
                 document.getElementById('thm-ppn').innerText = ppn.toLocaleString('id-ID');
-                document.getElementById('thm-total').innerText = (subtotal + ppn).toLocaleString('id-ID');
+                document.getElementById('thm-total').innerText = (netSubtotal + ppn).toLocaleString('id-ID');
             } else {
                 document.getElementById('preview-thermal').classList.add('hidden');
                 document.getElementById('preview-faktur').classList.remove('hidden');
@@ -713,14 +740,15 @@
 
                 const tbody = document.getElementById('inv-table-body');
                 tbody.innerHTML = '';
-                let subtotal = 0;
                 document.querySelectorAll('.item-row').forEach((r, idx) => {
                     const name = r.querySelector('.item-name').value || "Barang";
                     const qty = parseFloat(r.querySelector('.item-qty').value) || 0;
                     const unit = r.querySelector('.item-unit').value || "Box";
                     const price = parseFloat(r.querySelector('.item-price').value) || 0;
-                    const lineTotal = qty * price;
-                    subtotal += lineTotal;
+                    const disc = parseFloat(r.querySelector('.item-discount').value) || 0;
+                    const lineTotal = (qty * price) - disc;
+                    subtotal += (qty * price);
+                    totalDiscount += disc;
 
                     tbody.innerHTML += `
                         <tr>
@@ -734,16 +762,17 @@
                 });
 
                 const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
-                const ppn = subtotal * (ppnRate / 100);
+                const netSubtotal = Math.max(0, subtotal - totalDiscount);
+                const ppn = netSubtotal * (ppnRate / 100);
                 document.getElementById('inv-subtotal').innerText = subtotal.toLocaleString('id-ID');
+                document.getElementById('inv-discount').innerText = totalDiscount.toLocaleString('id-ID');
                 document.getElementById('inv-ppn-rate').innerText = ppnRate + '%';
                 document.getElementById('inv-ppn').innerText = ppn.toLocaleString('id-ID');
-                document.getElementById('inv-total').innerText = (subtotal + ppn).toLocaleString('id-ID');
+                document.getElementById('inv-total').innerText = (netSubtotal + ppn).toLocaleString('id-ID');
             }
         }
 
         function generateInvoice() {
-            updateInvoicePreview();
             const custName = document.getElementById('cust-name').value.trim() || "Pelanggan Umum";
             const custPhone = document.getElementById('cust-phone').value.trim();
             const custAddress = document.getElementById('cust-address').value.trim();
@@ -751,11 +780,12 @@
 
             if (!customers[custName]) customers[custName] = { phone: custPhone, address: custAddress, prices: {} };
 
-            let totalCost = 0, subtotal = 0;
+            let totalCost = 0, subtotal = 0, totalDiscount = 0;
             document.querySelectorAll('.item-row').forEach(r => {
                 const name = r.querySelector('.item-name').value.trim();
                 const qty = parseFloat(r.querySelector('.item-qty').value) || 0;
                 const price = parseFloat(r.querySelector('.item-price').value) || 0;
+                const disc = parseFloat(r.querySelector('.item-discount').value) || 0;
                 const cost = parseFloat(r.querySelector('.item-cost').value) || 0;
 
                 if (name) {
@@ -763,21 +793,27 @@
                     const prod = inventory.find(p => p.name.toLowerCase() === name.toLowerCase());
                     if (prod) prod.stock = Math.max(0, prod.stock - qty);
                 }
-                subtotal += qty * price;
-                totalCost += qty * cost;
+                subtotal += (qty * price);
+                totalDiscount += disc;
+                totalCost += (qty * cost);
             });
 
             localStorage.setItem('pos_customers', JSON.stringify(customers));
             localStorage.setItem('pos_inventory', JSON.stringify(inventory));
 
+            const netSubtotal = Math.max(0, subtotal - totalDiscount);
             const ppnRate = parseFloat(document.getElementById('ppn-rate').value) || 0;
-            const total = subtotal + (subtotal * (ppnRate / 100));
+            const total = netSubtotal + (netSubtotal * (ppnRate / 100));
             const profit = total - totalCost;
             const now = new Date();
             const isoDate = now.toISOString().split('T')[0];
 
+            const txId = 'INV' + Math.floor(100000 + Math.random() * 900000);
+            document.getElementById('inv-number').innerText = txId;
+            document.getElementById('thm-number').innerText = txId;
+
             transactions.push({
-                id: 'INV' + Math.floor(100000 + Math.random() * 900000),
+                id: txId,
                 outletId: activeOutletId,
                 date: now.toLocaleDateString('id-ID'),
                 rawDate: isoDate,
@@ -830,6 +866,13 @@
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Laporan Transaksi");
             XLSX.writeFile(wb, "Laporan_POS_TokoDwiKarya.xlsx");
+        }
+
+        function sendWAReport() {
+            const omset = document.getElementById('report-omset').innerText;
+            const profit = document.getElementById('report-profit').innerText;
+            const text = `*LAPORAN PENJUALAN TOKO DWI KARYA*\n\nOmset: ${omset}\nProfit Bersih: ${profit}\nTanggal: ${new Date().toLocaleDateString('id-ID')}`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
 
         function renderReports() {
