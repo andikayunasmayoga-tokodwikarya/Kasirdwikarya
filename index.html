@@ -861,13 +861,42 @@
         }
 
         function sendToWhatsApp() {
-            let custPhone = document.getElementById('cust-phone').value.trim();
-            if (!custPhone) { alert('Silakan masukkan Nomor WhatsApp Pelanggan.'); return; }
-            if (custPhone.startsWith('0')) custPhone = '62' + custPhone.slice(1);
-            downloadInvoicePDF();
-            const text = `*NOTA FAKTUR - TOKO DWI KARYA*\nTotal Netto: ${document.getElementById('summary-total').innerText}\n\n_Nota PDF otomatis diunduh. Terima kasih!_`;
-            setTimeout(() => window.open(`https://wa.me/${custPhone}?text=${encodeURIComponent(text)}`, '_blank'), 600);
-        }
+    let custPhone = document.getElementById('cust-phone').value.trim();
+    if (!custPhone) { alert('Silakan masukkan Nomor WhatsApp Pelanggan.'); return; }
+    if (custPhone.startsWith('0')) custPhone = '62' + custPhone.slice(1);
+
+    // 1. Mulai susun pesan
+    let text = `*NOTA PESANAN - TOKO DWI KARYA*\n\n`;
+    text += `Kepada: *${document.getElementById('cust-name').value || 'Pelanggan Umum'}*\n`;
+    text += `----------------------------\n`;
+
+    let subtotal = 0;
+    // 2. Loop rincian barang dari kasir
+    document.querySelectorAll('.item-row').forEach(r => {
+        const name = r.querySelector('.item-name').value || "Barang";
+        const qty = parseFloat(r.querySelector('.item-qty').value) || 0;
+        const price = parseFloat(r.querySelector('.item-price').value) || 0;
+        const disc = parseFloat(r.querySelector('.item-discount').value) || 0;
+        const lineTotal = (qty * price) - disc;
+        
+        subtotal += lineTotal;
+        
+        text += `• ${name}\n`;
+        text += `  (${qty} x ${price.toLocaleString('id-ID')}) - Disc: ${disc.toLocaleString('id-ID')}\n`;
+        text += `  Sub: *Rp ${lineTotal.toLocaleString('id-ID')}*\n`;
+    });
+
+    text += `----------------------------\n`;
+    text += `Total Netto: *${document.getElementById('summary-total').innerText}*\n\n`;
+    text += `Terima kasih telah berbelanja di Toko Dwi Karya!`;
+
+    // 3. Download PDF dulu (biar nota tetap ada), baru buka WhatsApp
+    downloadInvoicePDF();
+    
+    setTimeout(() => {
+        window.open(`https://wa.me/${custPhone}?text=${encodeURIComponent(text)}`, '_blank');
+    }, 500);
+}
 
         function exportToExcel() {
             const ws = XLSX.utils.json_to_sheet(transactions);
